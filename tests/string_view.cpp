@@ -155,4 +155,15 @@ TEST(StringView, Compare) {
     EXPECT_TRUE( ""_sv.compare(""_sv) == 0 );
 }
 
+TEST(StringView, At)
+{
+    using andwass::operator""_sv;
+    auto data = "hello world"_sv;
+
+    EXPECT_EQ(data.at(0), 'h');
+    EXPECT_EQ(data.at(10), 'd');
+    EXPECT_THROW((void)data.at(11), std::out_of_range);
+    EXPECT_THROW((void)data.at(100), std::out_of_range);
+}
+
 #pragma clang diagnostic pop

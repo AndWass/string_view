@@ -24,12 +24,19 @@ class string_view {
     const char *data_ = nullptr;
     std::size_t size_ = 0;
 public:
-    using pointer = const char*;
+    using value_type = char;
+    using pointer = char*;
+    using const_pointer = const char*;
+    using reference = char&;
     using const_reference = const char&;
-    using iterator = pointer;
 
-    using const_reverse_iterator = std::reverse_iterator<iterator>;
+    using iterator = pointer;
+    using const_iterator = const_pointer;
+    using reverse_iterator = std::reverse_iterator<iterator>;
+    using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+
     using size_type = std::size_t;
+    using difference_type = std::ptrdiff_t;
 
     static constexpr size_type npos = size_type(-1);
 
@@ -38,14 +45,14 @@ public:
      *
      * `data()` will return `nullptr`. `size()` will return 0.
      */
-    constexpr string_view() = default;
+    constexpr string_view() noexcept = default;
 
     /**
      * @brief Construct a `string_view` from a pointer and length pair.
      * @param data Pointer to the start of the `string_view`
      * @param size The size of the `string_view`
      */
-    constexpr string_view(pointer data, size_type size): data_(data), size_(size) {}
+    constexpr string_view(const_pointer data, size_type size) noexcept: data_(data), size_(size) {}
 
     /**
      * @brief Construct from a NULL-terminated string
@@ -54,20 +61,20 @@ public:
      * If `data == nullptr` is true then the `string_view` will have size 0, otherwise
      * the size will be determined by `std::strlen`.
      */
-    constexpr string_view(pointer data): data_(data) {
+    constexpr string_view(const_pointer data)noexcept: data_(data) {
         if (data_) {
             size_ = std::strlen(data_);
         }
     }
 
     template<class Iter>
-    constexpr string_view(Iter first, Iter last): data_(first), size_(last-first) {}
+    constexpr string_view(Iter first, Iter last) noexcept: data_(first), size_(last-first) {}
 
     /**
      * @brief Get a pointer to the start of the data
      * @return Pointer to the start of the data.
      */
-    [[nodiscard]] constexpr pointer data() const {
+    [[nodiscard]] constexpr const_pointer data() const noexcept {
         return data_;
     }
 
@@ -75,7 +82,7 @@ public:
      * @brief Get the size of the `string_view`
      * @return The current size of the `string_view`.
      */
-    [[nodiscard]] constexpr size_type size() const {
+    [[nodiscard]] constexpr size_type size() const noexcept {
         return size_;
     }
 
@@ -83,7 +90,7 @@ public:
      * @brief Helper to check if `string_view` points to an empty range of chars.
      * @return True if `size() == 0` otherwise false.
      */
-    [[nodiscard]] constexpr bool is_empty() const {
+    [[nodiscard]] constexpr bool is_empty() const noexcept {
         return size_ == 0;
     }
 
@@ -91,11 +98,11 @@ public:
      * @brief Get an interator to the start of the string view.
      * @return A random access iterator pointing to the start of the string view.
      */
-    [[nodiscard]] iterator begin() const {
+    [[nodiscard]] const_iterator begin() const noexcept {
         return data_;
     }
 
-    [[nodiscard]] const_reverse_iterator rbegin() const {
+    [[nodiscard]] const_reverse_iterator rbegin() const noexcept {
         return const_reverse_iterator(end());
     }
 
@@ -105,11 +112,11 @@ public:
      *
      * @note Attempting to dereference the iterator results in undefined behaviour.
      */
-    [[nodiscard]] iterator end() const {
+    [[nodiscard]] const_iterator end() const noexcept {
         return data_ + size_;
     }
 
-    [[nodiscard]] const_reverse_iterator rend() const {
+    [[nodiscard]] const_reverse_iterator rend() const noexcept {
         return const_reverse_iterator(begin());
     }
 
@@ -119,7 +126,7 @@ public:
      *
      * @note Calling `front()` on an empty string view results in undefined behaviour.
      */
-    [[nodiscard]] constexpr const_reference front() const {
+    [[nodiscard]] constexpr const_reference front() const noexcept {
         return data_[0];
     }
 
@@ -129,7 +136,7 @@ public:
      *
      * @note Calling `back()` on an empty string view results in undefined behaviour.
      */
-    [[nodiscard]] constexpr const_reference back() const {
+    [[nodiscard]] constexpr const_reference back() const noexcept {
         return data_[size_-1];
     }
 
@@ -139,7 +146,14 @@ public:
      *
      * @note The behaviour is undefined if `index >= size()`
      */
-    [[nodiscard]] constexpr const_reference operator[](size_type index) const {
+    [[nodiscard]] constexpr const_reference operator[](size_type index) const noexcept {
+        return data_[index];
+    }
+
+    [[nodiscard]] constexpr const_reference at(size_type index) const {
+        if (index >= size()) {
+            throw std::out_of_range("Index out of range");
+        }
         return data_[index];
     }
 
@@ -151,7 +165,7 @@ public:
      *
      * @note If `pos >= size()` then an empty view, `string_view(end(), 0)`, is returned.
      */
-    [[nodiscard]] constexpr string_view substr(size_type pos, size_type count = npos) const {
+    [[nodiscard]] constexpr string_view substr(size_type pos, size_type count = npos) const noexcept {
         if (pos >= size_) {
             return string_view(end(), 0);
         }
@@ -165,7 +179,7 @@ public:
      * @param needle The needle to search for
      * @return A view equivalent to `sv.substr(sv.find(needle))`.
      */
-    [[nodiscard]] constexpr string_view substr_starting_with(string_view needle) const {
+    [[nodiscard]] constexpr string_view substr_starting_with(string_view needle) const noexcept {
         return substr(find(needle));
     }
 
@@ -178,7 +192,7 @@ public:
      *
      * Unlike `std::string_view` this function does not result in undefined behaviour if `n > size()`
      */
-    constexpr string_view remove_prefix(size_type n) {
+    constexpr string_view remove_prefix(size_type n) noexcept {
         auto retval = substr(0, n);
         *this = substr(n);
         return retval;
@@ -193,7 +207,7 @@ public:
      *
      * Unlike `std::string_view` this function does not result in undefined behaviour if `n > size()`
      */
-    constexpr string_view remove_suffix(size_type n) {
+    constexpr string_view remove_suffix(size_type n) noexcept {
         n = (std::min)(n, size_);
         auto retval = substr(size_ - n);
         size_ -= n;
@@ -205,7 +219,7 @@ public:
      * @param sv The prefix to check
      * @return True if `this` starts with `sv`
      */
-    [[nodiscard]] constexpr bool starts_with(string_view sv) const {
+    [[nodiscard]] constexpr bool starts_with(string_view sv) const noexcept {
         return substr(0, sv.size()) == sv;
     }
 
@@ -214,7 +228,7 @@ public:
      * @param sv The suffix to check
      * @return True if `this` ends with `sv`
      */
-    [[nodiscard]] constexpr bool ends_with(string_view sv) const {
+    [[nodiscard]] constexpr bool ends_with(string_view sv) const noexcept {
         if (size() >= sv.size()) {
             return substr(size() - sv.size()) == sv;
         }
@@ -226,7 +240,7 @@ public:
      * @param ch The character to find
      * @return The index of `ch` or `npos` if not found.
      */
-    [[nodiscard]] constexpr size_type find(char ch) const {
+    [[nodiscard]] constexpr size_type find(char ch) const noexcept {
         for(size_type i=0; i<size(); i++) {
             if (data_[i] == ch) {
                 return i;
@@ -240,7 +254,7 @@ public:
      * @param needle The needle to search for in the view
      * @return The index such that `sv.substr(sv.find(needle)).starts_with(needle) == true`, or `npos` if not found.
      */
-    [[nodiscard]] constexpr size_type find(string_view needle) const {
+    [[nodiscard]] constexpr size_type find(string_view needle) const noexcept {
         if (needle.is_empty()) {
             return 0;
         }
@@ -269,7 +283,7 @@ public:
      *
      * `sv.find_nth(needle, 0)` is equivalent to `sv.find(needle)`.
      */
-    [[nodiscard]] constexpr size_type find_nth(string_view needle, size_type n) const {
+    [[nodiscard]] constexpr size_type find_nth(string_view needle, size_type n) const noexcept {
         string_view haystack = *this;
         for(size_type i=0; i<=n && haystack.size() >= needle.size(); i++) {
             auto found = haystack.find(needle);
@@ -292,7 +306,7 @@ public:
      * @param ch The character to find
      * @return The index of the last occurrence of `needle`, or `npos` if not found.
      */
-    [[nodiscard]] constexpr size_type rfind(char ch) const {
+    [[nodiscard]] constexpr size_type rfind(char ch) const noexcept {
         for(size_type i=size(); i > 0; --i) {
             if (data_[i-1] == ch) {
                 return i-1;
@@ -306,7 +320,7 @@ public:
      * @param needle The needle to search for
      * @return The index to the start of the last occurrence of `needle`, or `npos` if not found.
      */
-    [[nodiscard]] constexpr size_type rfind(string_view needle) const {
+    [[nodiscard]] constexpr size_type rfind(string_view needle) const noexcept {
         if (needle.is_empty()) {
             return size();
         }
@@ -331,7 +345,7 @@ public:
      * @param needle The needle to search
      * @return A value equivalent to `find(needle) != npos`
      */
-    [[nodiscard]] constexpr bool contains(string_view needle) const {
+    [[nodiscard]] constexpr bool contains(string_view needle) const noexcept {
         return find(needle) != npos;
     }
 
@@ -340,7 +354,7 @@ public:
      * @param needle The needle to search
      * @return A value equivalent to `find(needle) != npos`
      */
-    [[nodiscard]] constexpr bool contains(char needle) const {
+    [[nodiscard]] constexpr bool contains(char needle) const noexcept {
         return find(needle) != npos;
     }
 
@@ -349,7 +363,7 @@ public:
      * @param right The right hand side of the comparison
      * @return 0 if the two views are equal, a negative value if `this` compares less than `right`, otherwise a positive value.
      */
-    [[nodiscard]] constexpr int compare(string_view right) const {
+    [[nodiscard]] constexpr int compare(string_view right) const noexcept {
         const int memcmp_result = detail::compare(data(), right.data(), (std::min(size(), right.size())));
         if (memcmp_result == 0) {
             if (size() < right.size()) {
@@ -365,14 +379,14 @@ public:
         return memcmp_result;
     }
 
-    friend constexpr bool operator==(const string_view& lhs, const string_view& rhs) {
+    friend constexpr bool operator==(const string_view& lhs, const string_view& rhs) noexcept {
         if (lhs.size() != rhs.size()) {
             return false;
         }
         return lhs.compare(rhs) == 0;
     }
 
-    friend constexpr bool operator!=(const string_view& lhs, const string_view& rhs) {
+    friend constexpr bool operator!=(const string_view& lhs, const string_view& rhs) noexcept {
         return !(lhs == rhs);
     }
 };
