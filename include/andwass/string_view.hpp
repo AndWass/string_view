@@ -5,6 +5,21 @@
 #include <algorithm>
 
 namespace andwass {
+namespace detail
+{
+inline constexpr int compare(const char* left, const char* right, size_t n)
+{
+    for(size_t i=0; i<n; i++) {
+        if (left[i] < right[i]) {
+            return -1;
+        }
+        else if(left[i] > right[i]) {
+            return 1;
+        }
+    }
+    return 0;
+}
+}
 class string_view {
     const char *data_ = nullptr;
     std::size_t size_ = 0;
@@ -335,19 +350,7 @@ public:
      * @return 0 if the two views are equal, a negative value if `this` compares less than `right`, otherwise a positive value.
      */
     [[nodiscard]] constexpr int compare(string_view right) const {
-        auto cmp_impl = [this, &right]() {
-            const size_t to_check = (std::min(size(), right.size()));
-            for(size_t i=0; i<to_check; i++) {
-                if (data_[i] < right[i]) {
-                    return -1;
-                }
-                else if(data_[i] > right[i]) {
-                    return 1;
-                }
-            }
-            return 0;
-        };
-        int memcmp_result = cmp_impl();
+        const int memcmp_result = detail::compare(data(), right.data(), (std::min(size(), right.size())));
         if (memcmp_result == 0) {
             if (size() < right.size()) {
                 return -1;
