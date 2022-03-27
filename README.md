@@ -27,3 +27,5 @@ assert(aw_view == "hello");
   * Is this completely API compatible? No
   * Is this completely free of UB? No, notably indexing (`some_view[index]`) can still cause UB
   * Is this completely non-throwing? No, `some_view.at(index)` can throw.
+  * Does this library provide a user-defined literal? Yes, `using namespace andwass::literals` will enable
+`"some string"_sv` to create views..

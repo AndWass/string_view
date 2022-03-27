@@ -398,8 +398,12 @@ public:
     }
 };
 
-constexpr string_view operator""_sv(const char* s, std::size_t len) noexcept {
+namespace literals {
+constexpr string_view operator""_sv(const char *s, std::size_t len) noexcept {
     return string_view(s, len);
 }
+}
+
+using literals::operator""_sv;
 
 }// namespace andwass
